@@ -1,35 +1,25 @@
 const fs = require('fs');
+const fsPromises = fs.promises;
 const path = require('path');
-const styles = path.join(__dirname, 'styles');
 
-(function newFolder() {
-    const newStyles = path.join(__dirname, path.sep, 'project-dist/bundle.css');
-    fs.open(newStyles, 'w+', (err) => {
+async function makeStyles() {
+    let pathStyles = path.join(__dirname, 'styles');
+    let styles = await fsPromises.readdir(pathStyles);
+    let string = '';
+
+    for (let i = 0; i < styles.length; i++) {
+        let name = path.extname(styles[i]);
+        if (name == '.css') {
+            let file = await fsPromises.readFile(path.join(pathStyles, styles[i]));
+            string = string + file;
+        }
+    }
+    
+    fs.writeFile(path.join(__dirname, 'project-dist', 'bundle.css'), string, (err) => {
         if (err) {
             return err;
         }
     });
-})();
+};
 
-fs.readdir(styles, function(err, items) {
-    if (err) {
-        return err;
-    }
-    let result = '';
-    for (let i = 0; i < items.length; i++) {
-        if (path.extname(items[i]) == '.css') {
-            let stream = fs.createReadStream(path.join(__dirname, path.sep, 'styles', path.sep, items[i]));
-            stream.on('data', (file) => {
-                result += file;
-            });
-            stream.on('end', () => {
-                let bundleStyles = path.join(__dirname, path.sep, 'project-dist/bundle.css');
-                fs.appendFile(bundleStyles, result, function(err) {
-                    if (err) {
-                        return err;
-                    } 
-                });
-            })
-        }        
-    }
-});
+makeStyles();
